@@ -1,5 +1,7 @@
-from flask import Flask, request, render_template_string
+import re
+
 import requests
+from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
@@ -29,12 +31,29 @@ def index():
 def embed():
     video_url = request.form['videoUrl']
     video_id = get_video_id(video_url)
-    embed_url = f'https://www.youtube.com/embed/{video_id}'
-    response = requests.get(embed_url)
-    return response.content
+    if video_id:
+        embed_url = f'https://www.youtube.com/embed/{video_id}'
+        iframe = f'<iframe width="560" height="315" src="{embed_url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>'
+        return render_template_string('''
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>YouTube Video Embed</title>
+            </head>
+            <body>
+                <h1>Watch YouTube Video</h1>
+                <div id="videoContainer">
+                    {{ iframe|safe }}
+                </div>
+            </body>
+            </html>
+        ''', iframe=iframe)
+    else:
+        return "Invalid YouTube URL"
 
 def get_video_id(url):
-    import re
     video_id = ''
     match = re.match(r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
     if match and match.group(1):
